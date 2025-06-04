@@ -1,0 +1,203 @@
+#coding=utf-8
+import networkx as nx
+import math
+import random
+from random import shuffle
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator, FuncFormatter
+import os,sys
+import time
+from tqdm import tqdm
+os.chdir(sys.path[0])
+sys.path.append('..')
+import graph
+
+def deledge(graph, index_map):
+    for (u, v) in graph.edges:
+        if u in index_map and v in index_map and index_map[u] == index_map[v]:
+            continue
+        else:
+            graph.remove_edge(u,v)
+
+def find_max_set_length(set_list):
+    return len(max(set_list, key=len, default=0))
+
+def find_set_length(set_list):
+    set_lengths = []
+    for integer_set in set_list:
+        set_length = len(integer_set)
+        set_lengths.append(set_length)
+    return set_lengths
+
+def find_connected_components(graph):
+    connected_components = [set(component) for component in nx.connected_components(graph)]
+    index_map = {}
+    for i, component in enumerate(connected_components):
+        for node in component:
+            index_map[node] = i
+    return connected_components, index_map
+
+def MCC(G1, G2):
+    connected_components1,index_map1 = find_connected_components(G1)
+    connected_components2,index_map2 = find_connected_components(G2)
+    while connected_components1 != connected_components2:
+        deledge(G2, index_map1)
+        connected_components2, index_map2 = find_connected_components(G2)
+        deledge(G1, index_map2)
+        connected_components1, index_map1 = find_connected_components(G1)
+    return find_max_set_length(connected_components1)
+
+def delnode(G1,G2):
+    D1 = dict(G1.degree())
+    D2 = dict(G2.degree())
+    max_degrees = []
+    for node in D1.keys():
+        degree1 = D1[node]
+        degree2 = D2[node]
+        max_degrees.append((node, degree1+degree2))
+
+    max_degree = max(max_degrees, key=lambda t: t[1])[1]
+    max_degree_nodes = [t[0] for t in max_degrees if t[1] == max_degree]
+    # print(len(max_degree_nodes))
+
+    random_node = max_degree_nodes[0]
+    G1.remove_node(random_node)
+    G2.remove_node(random_node)
+    return random_node
+
+def critical_number(G1, G2, N, ND_ori,w1,w2):
+    ND_temp = ND_ori
+    i = 0
+    solutions = []
+    ND_mcc = [1]
+    num = N
+    score = 0.0
+    cost_list = []
+    total_weight1 = sum(w1.values())
+    total_weight2 = sum(w2.values())
+    while ND_temp != 1:
+    #while num != 1:
+        deleteNode = delnode(G1, G2)
+        solutions.append(deleteNode)
+        ND_temp = MCC(G1, G2)
+        ND_mcc.append(ND_temp/ND_ori)
+        cost = (w1[solutions[-1]]/total_weight1 + w2[solutions[-1]]/total_weight2)/2.0
+        score +=  ND_temp / ND_ori * cost
+        cost_list.append(cost)
+        num -= 1
+    return ND_mcc, solutions, score, cost_list
+
+
+def read_multiplex(path, N):
+    layers_matrix = []
+    graphs = []
+    _ii = []
+    _jj = []
+    _ww = []
+
+    g = nx.Graph()
+    for i in range(0, N):
+        g.add_node(i)
+    with open(path, "r") as lines:
+        cur_id = 1
+        for l in lines:
+            elems = l.strip(" \n").split(" ")
+            layer_id = int(elems[0])
+            if cur_id != layer_id:
+                adj_matr = nx.adjacency_matrix(g)
+                layers_matrix.append(adj_matr)
+                graphs.append(g)
+                g = nx.Graph()
+
+                for i in range(0, N):
+                    g.add_node(i)
+
+                cur_id = layer_id
+            node_id_1 = int(elems[1]) - 1
+            node_id_2 = int(elems[2]) - 1
+            if node_id_1 == node_id_2:
+                continue
+            g.add_edge(node_id_1, node_id_2)
+
+    adj_matr = nx.adjacency_matrix(g)
+    layers_matrix.append(adj_matr)
+    graphs.append(g)
+    return layers_matrix, graphs
+
+
+
+node_num = {'Padgett-Florentine-Families_multiplex': 16,
+            'AirTrain': 69,  # [(1,2)]
+            'Brain': 90,  # [(1,2)]
+            # 'fao_trade_multiplex': 214,
+            'Phys': 246,  # [(1,2), (1,3), (2,3)]
+            'celegans_connectome_multiplex': 279,  # [(1,2), (1,3), (2,3)]
+            # 'HumanMicrobiome_multiplex': 305,
+            # 'xenopus_genetic_multiplex': 416,
+            # 'pierreauger_multiplex': 514,
+            'rattus_genetic_multiplex': 2640,  # [(1,2)]
+            'sacchpomb_genetic_multiplex': 4092,  # [(1,2),(1,3),(1,4),(2,3),(2,4),(3,4),(3,5)]
+            'drosophila_genetic_multiplex': 8215,  # [(1,2)]
+            'arxiv_netscience_multiplex': 14489,  # [(1,2),(1,4),(1,5),(2,4),(2,5),(2,6),(2,8),(3,4)]
+            'Internet': 4202010733}
+
+nums_dict = {'AirTrain': [(1,2)],
+             'Brain': [(1,2)],
+             'Phys': [(2,3)],  # [(1,2), (1,3), (2,3)],
+             'celegans_connectome_multiplex': [(2,3)],
+             'rattus_genetic_multiplex': [(1,2)],
+             'sacchpomb_genetic_multiplex': [(1,2),(1,3),(1,4),(2,3),(2,4),(3,4),(3,5)],
+             'drosophila_genetic_multiplex': [(1,2)],
+             'arxiv_netscience_multiplex': [(1,2),(1,4),(1,5),(2,4),(2,5),(2,6),(2,8),(3,4)]}
+
+if __name__ == "__main__":
+    random.seed(0)
+    file_path = '../../results/HDA/synthetic_cost'
+    if not os.path.exists(file_path):
+        os.mkdir(file_path)
+    test_name = ['30-50','50-100','100-200','200-300','300-400','400-500']
+    for data in test_name:
+        score_list = []
+        for i in tqdm(range(100)):
+            adj1 = np.load("../../FINDER_CN/data/syn_%s/adj1_%s.npy"%(data,i))
+            adj2 = np.load("../../FINDER_CN/data/syn_%s/adj2_%s.npy"%(data,i))
+            N = len(adj1)
+            G1 = nx.Graph()
+            G2 = nx.Graph()
+            G1.add_nodes_from(range(0, N))
+            G2.add_nodes_from(range(0, N))
+            for i in range(0, N):
+                for j in range(0, N):
+                    if adj1[i][j] == 1:
+                        G1.add_edge(i, j)
+            for i in range(0, N):
+                for j in range(0, N):
+                    if adj2[i][j] == 1:
+                        G2.add_edge(i, j)
+                        
+            weights1 = {}
+            for node in G1.nodes():
+                weights1[node] = random.uniform(0,1) 
+            weights2 = {}
+            for node in G2.nodes():
+                weights2[node] = random.uniform(0,1)            
+            total_weight1 = sum(weights1.values())
+            total_weight2 = sum(weights2.values())
+            
+            M_ori = MCC(G1, G2)  
+            MCCs,remove_nodes,score,cost_list = critical_number(G1.copy(), G2.copy(), N, M_ori,weights1,weights2)
+            # remain_score = 0.0
+            # nodes = list(range(N))
+            # remain_nodes = list(set(nodes)^set(remove_nodes))
+            # for node in remain_nodes[:-1]:
+            #     remain_score += 1/ M_ori * (weights1[node]/total_weight1 + weights2[node]/total_weight2)/2.0
+            # total_score = remain_score + score
+            score_list.append(score)
+                
+        score_mean = np.mean(score_list)
+        score_std = np.std(score_list)
+        print(score_mean*100,score_std*100)
+        with open('%s/add_result_%s.txt'%(file_path,data), 'w') as fout:
+            fout.write('%.2f±%.2f,' % (score_mean * 100, score_std * 100))

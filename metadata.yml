@@ -1,0 +1,38 @@
+metadata_version: 1
+name: Deep-learning-aided dismantling of interdependent networks
+description: Identifying the minimal set of nodes whose removal breaks a complex network
+  apart, also referred as the network dismantling problem, is a highly non-trivial
+  task with applications in multiple domains, Whereas network dismantling has been
+  extensively studied over the past decade, research has primarily focused on the
+  formulations of the optimization problem for single-layer networks, neglecting that
+  many, if not all, real networks display multiple layers of interdependent interactions.
+  in such networks, the optimization problem is fundamentally different as the effect
+  of removing nodes propagates within and across layers in a way that can not be predicted
+  using a single-layer perspective. Here, we propose a dismantling algorithm namedMultiDismantler,
+  which leverages multiplex network representation and deep reinforcement learning
+  to optimally dismantle multi-layer interdependent networks. MultiDismantler is trained
+  on small synthetic multiplex graphs; when applied to large real and synthetic networks,
+  it displays exceptional dismantling performance, clearly outperforming all existing
+  methods that rely on a single-laver approach to network dismantling. We show that
+  MultiDismantler is effective in guiding strategies for the containment of diseases
+  in social networks characterized by multiple layers of social interactions. Also,
+  we show that the multi-dismantler is useful in the design of protocols aimed at
+  delaying the onset of cascading failures in interdependent critical infrastructures.
+tags:
+- Graph Neural Networks; Deep Reinforcement Learning; Network Optimization
+authors:
+- name: Weiwei Gu
+  affiliations:
+  - name: Beijing University of Chemical Technology
+- name: Yang Chen
+  affiliations:
+  - name: Beijing University of Chemical Technology
+- name: Lei Li
+  affiliations:
+  - name: University of Science and Technology of China
+- name: Jinqiang Hou
+  affiliations:
+  - name: Beijing Universiyt of Chemical Technology
+corresponding_contributor:
+  name: Filippo Radicchi
+  email: f.radicchi@gmail.com
